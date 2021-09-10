@@ -24,6 +24,54 @@ def crear_dama(x,y,r,g,b,radius):
                        0.0, r, g, b])
     
     return numpy.array(circle, dtype = numpy.float32)
+#Funcion que genera el tablero, donde x sera el largo y ancho del tablero y retorna su bs.Shape
+def crear_tablero(x):
+    #Se crea inicialmente un gran cuadrado blanco sobre el cual se dibujara
+    tablero=[
+        #positions       #colors
+         -x/2, -x/2, 0.0,  1.0, 1.0, 1.0,
+          x/2, -x/2, 0.0,  1.0, 1.0, 1.0,
+          x/2,  x/2, 0.0,  1.0, 1.0, 1.0,
+
+          x/2,  x/2, 0.0,  1.0, 1.0, 1.0,
+         -x/2, x/2, 0.0,  1.0, 1.0, 1.0,
+         -x/2, -x/2, 0.0,  1.0, 1.0, 1.0,]
+    frac=x/8
+    i=0
+    x_position=1
+    y_position=0
+    #Ciclo en el que se crean los cuadrados negros
+    while i<32:
+        if i%4==0:
+            if i==0:
+                None
+            else:
+                y_position+=1
+                x_position=1
+        if y_position%2!=0:
+            x_position-=1
+            tablero.extend([
+             -x/2 + frac*y_position, -x/2 + frac*x_position, 0.0,  0.0, 0.0, 0.0,
+             -x/2+ frac*y_position, -x/2 + x/8 + frac*x_position, 0.0,  0.0, 0.0, 0.0,
+            -x/2 + x/8+ frac*y_position, -x/2 + x/8 + frac*x_position, 0.0,  0.0, 0.0, 0.0,
+
+            -x/2 + x/8+ frac*y_position, -x/2 + x/8 + frac*x_position, 0.0,  0.0, 0.0, 0.0,
+            -x/2 + x/8+ frac*y_position, -x/2 + frac*x_position, 0.0,  0.0, 0.0, 0.0,
+            -x/2 + frac*y_position, -x/2 + frac*x_position, 0.0,  0.0, 0.0, 0.0])
+            x_position+=3
+
+        if y_position%2 == 0:
+             tablero.extend([
+             -x/2 + frac*y_position, -x/2 + frac*x_position, 0.0,  0.0, 0.0, 0.0,
+             -x/2+ frac*y_position, -x/2 + x/8 + frac*x_position, 0.0,  0.0, 0.0, 0.0,
+            -x/2 + x/8+ frac*y_position, -x/2 + x/8 + frac*x_position, 0.0,  0.0, 0.0, 0.0,
+
+            -x/2 + x/8+ frac*y_position, -x/2 + x/8 + frac*x_position, 0.0,  0.0, 0.0, 0.0,
+            -x/2 + x/8+ frac*y_position, -x/2 + frac*x_position, 0.0,  0.0, 0.0, 0.0,
+            -x/2 + frac*y_position, -x/2 + frac*x_position, 0.0,  0.0, 0.0, 0.0])
+             x_position+=2
+        i+=1
+    return numpy.array(tablero, dtype = numpy.float32)
 
 if __name__ == "__main__":
 
@@ -43,7 +91,7 @@ if __name__ == "__main__":
     glfw.make_context_current(window)
 
     dama = crear_dama(0.5,0.0, 0.0, 1.0, 0.0, 0.2)
-
+    tablero=crear_tablero(1.0)
     # Defining shaders for our pipeline
     vertex_shader = """
     #version 330
@@ -79,19 +127,15 @@ if __name__ == "__main__":
         OpenGL.GL.shaders.compileShader(fragment_shader, GL_FRAGMENT_SHADER))
 
     # Each shape must be attached to a Vertex Buffer Object (VBO)
-    vboDama = glGenBuffers(1)
-    glBindBuffer(GL_ARRAY_BUFFER, vboDama)
-    glBufferData(GL_ARRAY_BUFFER, len(dama) * SIZE_IN_BYTES, dama, GL_STATIC_DRAW)
+   
 
-    # Telling OpenGL to use our shader program
+    vboTablero=glGenBuffers(1)
+    glBindBuffer(GL_ARRAY_BUFFER, vboTablero)
     glUseProgram(shaderProgram)
-
-    # Setting up the clear screen color
-    glClearColor(0.5,0.5, 0.5, 1.0)
-
     glClear(GL_COLOR_BUFFER_BIT)
+    glBufferData(GL_ARRAY_BUFFER, len(tablero) * SIZE_IN_BYTES, tablero, GL_STATIC_DRAW)
+    glBindBuffer(GL_ARRAY_BUFFER, vboTablero)
 
-    glBindBuffer(GL_ARRAY_BUFFER, vboDama)
     position = glGetAttribLocation(shaderProgram, "position")
     glVertexAttribPointer(position, 3, GL_FLOAT, GL_FALSE, 24, ctypes.c_void_p(0))
     glEnableVertexAttribArray(position)
@@ -99,13 +143,9 @@ if __name__ == "__main__":
     color = glGetAttribLocation(shaderProgram, "color")
     glVertexAttribPointer(color, 3, GL_FLOAT, GL_FALSE, 24, ctypes.c_void_p(12))
     glEnableVertexAttribArray(color)
-    
-    # It renders a scene using the active shader program (pipeline) and the active VAO (shapes)
-    glDrawArrays(GL_TRIANGLES, 0, int(len(dama)/6))
-
-    # Moving our draw to the active color buffer
+    glDrawArrays(GL_TRIANGLES, 0, int(len(tablero)/6))
     glfw.swap_buffers(window)
-
+    
     # Waiting to close the window
     while not glfw.window_should_close(window):
 
